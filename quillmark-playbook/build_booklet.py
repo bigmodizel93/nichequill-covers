@@ -1083,7 +1083,8 @@ Board Plan, and the Founder &amp; Operator Manual into a single operating packag
 # ----------------------------------------------------------------------------
 # Render
 # ----------------------------------------------------------------------------
-html = f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>{CSS}</style></head><body>{''.join(H)}</body></html>"
-out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Quillmark-POD-Business-Playbook.pdf")
-HTML(string=html).write_pdf(out_path)
-print("WROTE", out_path, os.path.getsize(out_path), "bytes")
+if __name__ == "__main__":
+    html = f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>{CSS}</style></head><body>{''.join(H)}</body></html>"
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Quillmark-POD-Business-Playbook.pdf")
+    HTML(string=html).write_pdf(out_path)
+    print("WROTE", out_path, os.path.getsize(out_path), "bytes")
