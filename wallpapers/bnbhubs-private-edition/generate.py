@@ -19,7 +19,7 @@ GOLD=np.array([232,176,75])/255; GOLD_B=np.array([244,205,110])/255; CORAL=np.ar
 IVORY=np.array([244,236,221])/255; SAND=np.array([225,207,173])/255; CREAM=np.array([243,244,242])/255
 
 FD="/usr/share/fonts/truetype"
-def font(p,s): return ImageFont.truetype(os.path.join(FD,p),max(8,int(s)))
+def font(p,s): return ImageFont.truetype(os.path.join(FD,p),max(12,int(s)))
 F_SERIF_B="dejavu/DejaVuSerif-Bold.ttf"; F_SANS="liberation/LiberationSans-Regular.ttf"
 F_SANS_B="liberation/LiberationSans-Bold.ttf"; F_MONO="liberation/LiberationMono-Regular.ttf"
 
@@ -102,23 +102,35 @@ def monogram_seal(cx,cy,scale,ink,accent):
 def mark(cx,cy,ink,accent,scale=1.0):
     ov=Image.new("RGBA",(W,H),(0,0,0,0)); d=ImageDraw.Draw(ov)
     ic=tuple(int(c*255) for c in ink); ac=tuple(int(c*255) for c in accent)
-    px,py=int(cx*W),int(cy*H); sc=scale*S
-    draw_text_spaced(d,(px,py),"B N B H U B S",font(F_SANS_B,30*sc),ic+(225,),tracking=int(8*sc))
-    lw=draw_text_spaced(d,(px,py+int(36*sc)),EDITION,font(F_MONO,19*sc),ac+(220,),tracking=int(6*sc))
-    ry=py+int(36*sc)+int(9*sc)
-    d.line([px-lw/2-int(40*sc),ry,px-lw/2-int(14*sc),ry],fill=ac+(160,),width=1)
-    d.line([px+lw/2+int(14*sc),ry,px+lw/2+int(40*sc),ry],fill=ac+(160,),width=1)
-    draw_text_spaced(d,(px,py+int(66*sc)),"FOR "+OWNER,font(F_SANS,16*sc),ic+(150,),tracking=int(3*sc))
-    draw_text_spaced(d,(px,py+int(90*sc)),FINGERPRINT,font(F_MONO,12*sc),ac+(120,),tracking=int(2*sc))
+    px,py=int(cx*W),int(cy*H); sc=scale*max(S,0.72)
+    draw_text_spaced(d,(px,py),"B N B H U B S",font(F_SANS_B,30*sc),ic+(240,),tracking=int(8*sc))
+    lw=draw_text_spaced(d,(px,py+int(38*sc)),EDITION,font(F_MONO,20*sc),ac+(240,),tracking=int(6*sc))
+    ry=py+int(38*sc)+int(10*sc)
+    d.line([px-lw/2-int(40*sc),ry,px-lw/2-int(14*sc),ry],fill=ac+(190,),width=max(1,int(1.3*sc)))
+    d.line([px+lw/2+int(14*sc),ry,px+lw/2+int(40*sc),ry],fill=ac+(190,),width=max(1,int(1.3*sc)))
+    draw_text_spaced(d,(px,py+int(70*sc)),"FOR "+OWNER,font(F_SANS,17*sc),ic+(215,),tracking=int(3*sc))
+    draw_text_spaced(d,(px,py+int(96*sc)),FINGERPRINT,font(F_MONO,15*sc),ac+(200,),tracking=int(2*sc))
     return ov
 def comp(arr,ov,blur=0):
     if blur: ov=ov.filter(ImageFilter.GaussianBlur(blur))
     base=to_img(arr).convert("RGBA"); base.alpha_composite(ov)
     return np.asarray(base.convert("RGB")).astype(np.float32)/255
 
+def shadow_comp(arr,ov,mode,alpha=0.7,blur=None):
+    """Composite a text overlay with a soft contrast halo behind it (dark halo
+    in dark mode, light halo in light mode) — boosts legibility, keeps tone."""
+    if blur is None: blur=max(4,int(7*S))
+    base=to_img(arr).convert("RGBA"); a=ov.split()[3]
+    val=0 if mode=='dark' else 255
+    sh_a=a.point(lambda v:int(v*alpha))
+    chan=Image.new("L",(W,H),val)
+    shadow=Image.merge("RGBA",(chan,chan,chan,sh_a)).filter(ImageFilter.GaussianBlur(blur))
+    base.alpha_composite(shadow); base.alpha_composite(shadow); base.alpha_composite(ov)
+    return np.asarray(base.convert("RGB")).astype(np.float32)/255
+
 def finalize(arr,mode,ink,acc,irid=0.05,spark=False,markpos=0.135):
     arr=arr+iridescent(irid,mode); arr=vignette(arr,0.20 if mode=='dark' else 0.12); arr=arr+grain(0.010)
-    arr=comp(arr,mark(0.5,markpos,ink,acc,1.05))
+    arr=shadow_comp(arr,mark(0.5,markpos,ink,acc,1.05),mode,alpha=0.6)
     if spark: arr=comp(arr,sparkles(int(22*max(S,0.6)),mode,acc))
     arr=legibility(arr,mode); return to_img(arr)
 
@@ -203,16 +215,16 @@ def skin_signature(mode):
     arr=comp(arr,monogram_seal(cx,cy,1.05,ink,acc))
     ov=Image.new("RGBA",(W,H),(0,0,0,0)); d=ImageDraw.Draw(ov)
     ic=tuple(int(c*255) for c in ink); ac=tuple(int(c*255) for c in acc)
-    px=int(cx*W); by=int((cy+0.135)*H); sc=S
+    px=int(cx*W); by=int((cy+0.135)*H); sc=max(S,0.72)
     draw_text_spaced(d,(px,by),OWNER,font(F_SERIF_B,74*sc),ic+(255,),tracking=int(14*sc))
-    lw=draw_text_spaced(d,(px,by+int(58*sc)),EDITION,font(F_MONO,24*sc),ac+(235,),tracking=int(10*sc))
-    ry=by+int(58*sc)+int(12*sc)
-    d.line([px-lw/2-int(54*sc),ry,px-lw/2-int(18*sc),ry],fill=ac+(170,),width=1)
-    d.line([px+lw/2+int(18*sc),ry,px+lw/2+int(54*sc),ry],fill=ac+(170,),width=1)
-    draw_text_spaced(d,(px,by+int(104*sc)),"B N B H U B S  ·  P R I V A T E",font(F_SANS_B,20*sc),ic+(170,),tracking=int(5*sc))
-    draw_text_spaced(d,(px,by+int(138*sc)),"FINGERPRINT  "+FINGERPRINT,font(F_MONO,16*sc),ac+(150,),tracking=int(2*sc))
-    draw_text_spaced(d,(px,by+int(162*sc)),"MINTED  "+MINTED+"  ·  EL GOUNA · RED SEA",font(F_SANS,14*sc),ic+(110,),tracking=int(2*sc))
-    arr=comp(arr,ov); arr=vignette(arr,0.2 if mode=='dark' else 0.12)
+    lw=draw_text_spaced(d,(px,by+int(60*sc)),EDITION,font(F_MONO,24*sc),ac+(250,),tracking=int(10*sc))
+    ry=by+int(60*sc)+int(13*sc)
+    d.line([px-lw/2-int(54*sc),ry,px-lw/2-int(18*sc),ry],fill=ac+(210,),width=max(1,int(1.4*sc)))
+    d.line([px+lw/2+int(18*sc),ry,px+lw/2+int(54*sc),ry],fill=ac+(210,),width=max(1,int(1.4*sc)))
+    draw_text_spaced(d,(px,by+int(108*sc)),"B N B H U B S  ·  P R I V A T E",font(F_SANS_B,20*sc),ic+(225,),tracking=int(5*sc))
+    draw_text_spaced(d,(px,by+int(144*sc)),"FINGERPRINT  "+FINGERPRINT,font(F_MONO,17*sc),ac+(210,),tracking=int(2*sc))
+    draw_text_spaced(d,(px,by+int(170*sc)),"MINTED  "+MINTED+"  ·  EL GOUNA · RED SEA",font(F_SANS,15*sc),ic+(185,),tracking=int(2*sc))
+    arr=shadow_comp(arr,ov,mode); arr=vignette(arr,0.2 if mode=='dark' else 0.12)
     arr=arr+iridescent(0.08 if mode=='dark' else 0.05,mode)
     arr=np.clip(arr,0,1); arr=comp(arr,sparkles(int(26*max(S,0.6)),mode,acc)); arr=legibility(arr,mode)
     return to_img(arr)
