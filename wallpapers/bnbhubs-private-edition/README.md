@@ -18,6 +18,11 @@ crop" error (the two screens are completely different shapes).
 | 03 | Gouna Dunes | Travel / weekend |
 | 04 | Unicorn Aurora | Wind-down / sleep |
 | 05 | One of One | Signature / founder (hero) |
+| 06 | Obsidian Royale | Minimal luxury / boardroom |
+| 07 | Liquid Silk | Expressive / creative |
+| 08 | Spectral Glass | Modern / tech (glassmorphism) |
+| 09 | Arabesque Gold | Elegant / cultural |
+| 10 | Velvet Nebula | Dreamy / night (with M constellation) |
 
 Personalized: `ONE OF ONE`, wax-seal monogram **M**, fingerprint
 `C0CE·2FCA·1EB1·8A92`, minted MMXXVI.

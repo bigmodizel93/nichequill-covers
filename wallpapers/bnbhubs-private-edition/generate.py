@@ -229,8 +229,119 @@ def skin_signature(mode):
     arr=np.clip(arr,0,1); arr=comp(arr,sparkles(int(26*max(S,0.6)),mode,acc)); arr=legibility(arr,mode)
     return to_img(arr)
 
+# ===== NEW ultra-premium skins =====
+def skin_obsidian(mode):  # matte black + blueprint grid + rising gold arc-sun
+    if mode=="dark":
+        arr=vgrad([(0.0,np.array([3,5,8])/255),(0.55,NAVY*1.25),(1.0,TEAL_D*0.5)])
+        ink,acc,arcc=IVORY,GOLD_B,GOLD_B; gline=70
+    else:
+        arr=vgrad([(0.0,np.array([0.96,0.96,0.95])),(0.5,np.array([0.93,0.91,0.86])),(1.0,SAND*1.0)])
+        ink,acc,arcc=np.array([0.15,0.16,0.17]),np.array([0.5,0.36,0.10]),np.array([0.50,0.36,0.10]); gline=40
+    cx,cy=0.5,0.80
+    arr=screen(arr,blob(cx,cy,0.55,0.22,acc,0.16 if mode=='dark' else 0.12,1.6))
+    ov=Image.new("RGBA",(W,H),(0,0,0,0)); d=ImageDraw.Draw(ov)
+    ac=tuple(int(c*255) for c in arcc); ic=tuple(int(c*255) for c in ink)
+    g=int(W/12)
+    for x in range(0,W,g): d.line([x,0,x,H],fill=ic+(gline//5,),width=1)
+    for y in range(0,H,g): d.line([0,y,W,y],fill=ic+(gline//5,),width=1)
+    pxx,pyy=cx*W,cy*H
+    abase=118 if mode=='dark' else 150
+    for i in range(48):
+        r=int((0.03+0.0215*i)*H); a=int(max(10,abase-i*2.2))
+        d.ellipse([pxx-r,pyy-r,pxx+r,pyy+r],outline=ac+(a,),width=max(1,int(1.6*S)))
+    arr=comp(arr,ov)
+    return finalize(arr,mode,ink,acc,0.05,mode=='dark')
+
+def skin_silk(mode):  # flowing silk ribbons with specular sheen
+    warp=np.sin(nx*math.pi*3.0+np.sin(ny*math.pi*2.0)*1.3)
+    field=ny*5.0+warp*0.7+0.4*np.sin(nx*math.pi*1.5)
+    t=0.5+0.5*np.sin(field*math.pi*2.0)
+    if mode=="dark":
+        c0,c1,bs=TEAL_D*0.85,GOLD*0.9,NAVY; ink,acc,irid,spc=IVORY,GOLD_B,0.08,0.35
+    else:
+        c0,c1,bs=np.array([0.86,0.90,0.88]),GOLD_B,CREAM; ink,acc,irid,spc=np.array([0.18,0.17,0.13]),np.array([0.55,0.40,0.12]),0.05,0.2
+    arr=c0[None,None,:]*(1-t[:,:,None])+c1[None,None,:]*t[:,:,None]
+    arr=screen(arr,np.ones(3)[None,None,:]*(t**6)[:,:,None]*spc)
+    arr=arr*(0.8+0.2*ny)[:,:,None]; arr=0.9*arr+0.1*bs[None,None,:]
+    arr=np.asarray(to_img(arr).filter(ImageFilter.GaussianBlur(max(2,int(3*S))))).astype(np.float32)/255
+    return finalize(arr,mode,ink,acc,irid,mode=='dark')
+
+def skin_glass(mode):  # glassmorphism frosted panels
+    if mode=="dark":
+        base=vgrad([(0.0,NAVY*1.3),(0.45,TEAL_D*0.9),(0.7,np.array([0.10,0.30,0.34])),(1.0,NAVY*1.1)])
+        base=screen(base,blob(0.2,0.25,0.4,0.3,TEAL,0.25,1.6)); base=screen(base,blob(0.85,0.7,0.4,0.3,GOLD,0.22,1.6)); base=screen(base,blob(0.7,0.12,0.3,0.2,CORAL,0.16,1.6))
+        ink,acc=IVORY,GOLD_B; fill=(255,255,255,30); bord=(255,255,255,150)
+    else:
+        base=vgrad([(0.0,CREAM),(0.5,np.array([0.88,0.92,0.91])),(1.0,SAND*1.02)])
+        base=screen(base,blob(0.2,0.25,0.4,0.3,TEAL*0.4,0.18,1.6)); base=screen(base,blob(0.85,0.7,0.4,0.3,GOLD_B,0.18,1.6))
+        ink,acc=np.array([0.16,0.18,0.18]),np.array([0.55,0.40,0.12]); fill=(255,255,255,75); bord=(255,255,255,180)
+    img=to_img(base).convert("RGBA"); blurred=img.filter(ImageFilter.GaussianBlur(max(10,int(28*S))))
+    for x0,y0,x1,y1,rad in [(0.16,0.30,0.84,0.60,0.06),(0.30,0.55,0.70,0.78,0.05)]:
+        bx=(int(x0*W),int(y0*H),int(x1*W),int(y1*H)); rr=int(rad*W)
+        mask=Image.new("L",(W,H),0); ImageDraw.Draw(mask).rounded_rectangle(bx,radius=rr,fill=255)
+        img.paste(blurred,(0,0),mask)
+        ov=Image.new("RGBA",(W,H),(0,0,0,0)); od=ImageDraw.Draw(ov)
+        od.rounded_rectangle(bx,radius=rr,fill=fill); od.rounded_rectangle(bx,radius=rr,outline=bord,width=max(1,int(2*S)))
+        img.alpha_composite(ov)
+    arr=np.asarray(img.convert("RGB")).astype(np.float32)/255
+    return finalize(arr,mode,ink,acc,0.06,False)
+
+def skin_arabesque(mode):  # fine gold Islamic star geometry
+    if mode=="dark":
+        arr=vgrad([(0.0,NAVY*1.3),(0.5,TEAL_D*0.9),(1.0,NAVY*1.1)]); linec,ink,acc=GOLD_B,IVORY,GOLD_B; la=130
+    else:
+        arr=vgrad([(0.0,CREAM),(0.5,np.array([0.90,0.92,0.90])),(1.0,SAND*1.0)]); linec,ink,acc=GOLD*0.62,np.array([0.16,0.18,0.18]),np.array([0.55,0.40,0.12]); la=180
+    arr=screen(arr,blob(0.5,0.42,0.42,0.42,acc,0.16 if mode=='dark' else 0.09,1.6))
+    ov=Image.new("RGBA",(W,H),(0,0,0,0)); d=ImageDraw.Draw(ov); lc=tuple(int(c*255) for c in linec)
+    def star8(cxp,cyp,ro,ri,rot=0):
+        p=[]
+        for k in range(8):
+            p.append((cxp+ro*math.cos(rot+k*2*math.pi/8),cyp+ro*math.sin(rot+k*2*math.pi/8)))
+            p.append((cxp+ri*math.cos(rot+(k+0.5)*2*math.pi/8),cyp+ri*math.sin(rot+(k+0.5)*2*math.pi/8)))
+        return p
+    def octo(cxp,cyp,r,rot=0): return [(cxp+r*math.cos(rot+k*2*math.pi/8),cyp+r*math.sin(rot+k*2*math.pi/8)) for k in range(8)]
+    g=int(W/7); Ro=g*0.60; Ri=Ro*0.40; wdt=max(1,int(1.5*S))
+    nodes=[]
+    for gy in range(-1,int(H/g)+2):
+        for gx in range(-1,int(W/g)+2):
+            nodes.append((gx*g,gy*g)); nodes.append((gx*g+g/2,gy*g+g/2))  # main + offset lattice
+    for cxp,cyp in nodes:
+        dxn,dyn=cxp/W-0.5,cyp/H-0.5; fade=max(0.0,1-(dxn*dxn+dyn*dyn)*1.7); a=int(la*fade)
+        if a<8: continue
+        s=star8(cxp,cyp,Ro,Ri,math.pi/8); d.line(s+[s[0]],fill=lc+(a,),width=wdt)
+        o=octo(cxp,cyp,Ri*0.92,math.pi/8); d.line(o+[o[0]],fill=lc+(int(a*0.55),),width=wdt)
+    arr=comp(arr,ov)
+    return finalize(arr,mode,ink,acc,0.05,mode=='dark')
+
+def skin_nebula(mode):  # deep cosmos, starfield, M constellation
+    if mode=="dark":
+        arr=vgrad([(0.0,np.array([4,6,12])/255),(0.5,TEAL_D*0.6),(1.0,np.array([8,8,18])/255)])
+        arr=screen(arr,blob(0.30,0.35,0.45,0.30,TEAL,0.30,1.6)); arr=screen(arr,blob(0.72,0.62,0.40,0.30,CORAL*0.8,0.22,1.6)); arr=screen(arr,blob(0.55,0.50,0.50,0.40,GOLD*0.6,0.16,1.6))
+        ink,acc,stars=IVORY,GOLD_B,True
+    else:
+        arr=vgrad([(0.0,CREAM),(0.5,np.array([0.90,0.93,0.93])),(1.0,np.array([0.93,0.90,0.85]))])
+        arr=screen(arr,blob(0.30,0.35,0.45,0.30,TEAL*0.3,0.15,1.6)); arr=screen(arr,blob(0.72,0.62,0.40,0.30,GOLD_B,0.16,1.6))
+        ink,acc,stars=np.array([0.16,0.18,0.2]),np.array([0.55,0.40,0.12]),False
+    arr=np.asarray(to_img(arr).filter(ImageFilter.GaussianBlur(max(6,int(24*S))))).astype(np.float32)/255
+    ov=Image.new("RGBA",(W,H),(0,0,0,0)); d=ImageDraw.Draw(ov)
+    if stars:
+        rng=np.random.default_rng(SEED_INT+1)
+        for _ in range(int(460*max(S,0.5))):
+            x=rng.uniform(0,1)*W; y=rng.uniform(0,1)*H; b=rng.uniform(0.2,1.0); s=max(1,(2 if b>0.85 else 1)*S)
+            col=(255,255,255) if rng.uniform(0,1)>0.25 else (244,205,110)
+            d.ellipse([x-s,y-s,x+s,y+s],fill=col+(int(190*b),))
+        Mp=[(0.40,0.33),(0.425,0.25),(0.46,0.30),(0.495,0.25),(0.52,0.33)]; Mp=[(px*W,py*H) for px,py in Mp]
+        for i in range(len(Mp)-1): d.line([Mp[i],Mp[i+1]],fill=(244,205,110,95),width=max(1,int(1.2*S)))
+        for x,y in Mp:
+            r=3*S; d.ellipse([x-r,y-r,x+r,y+r],fill=(255,255,255,235))
+    arr=comp(arr,ov)
+    return finalize(arr,mode,ink,acc,0.07 if mode=='dark' else 0.04,False)
+
 SKINS=[("01-red-sea-horizon",skin_horizon),("02-marina-depths",skin_depths),
-       ("03-gouna-dunes",skin_dunes),("04-unicorn-aurora",skin_aurora),("05-one-of-one",skin_signature)]
+       ("03-gouna-dunes",skin_dunes),("04-unicorn-aurora",skin_aurora),("05-one-of-one",skin_signature),
+       ("06-obsidian-royale",skin_obsidian),("07-liquid-silk",skin_silk),
+       ("08-spectral-glass",skin_glass),("09-arabesque-gold",skin_arabesque),
+       ("10-velvet-nebula",skin_nebula)]
 SCREENS=[("inner-unfolded",1968,2184),("cover-folded",1080,2520)]
 
 if __name__=="__main__":
