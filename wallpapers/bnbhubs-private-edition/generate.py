@@ -345,11 +345,14 @@ SKINS=[("01-red-sea-horizon",skin_horizon),("02-marina-depths",skin_depths),
 SCREENS=[("inner-unfolded",1968,2184),("cover-folded",1080,2520)]
 
 if __name__=="__main__":
+    SS=int(os.environ.get("SS","2"))   # supersample factor for crisp anti-aliasing
     for scr,w,h in SCREENS:
         d=os.path.join(OUT,scr); os.makedirs(d,exist_ok=True)
         for name,fn in SKINS:
             for mode in ("dark","light"):
-                np.random.seed(7); set_canvas(w,h)
-                fn(mode).save(os.path.join(d,f"bnbhubs-{scr}-{name}-{mode}.png"),"PNG")
-        print("done",scr,w,"x",h)
+                np.random.seed(7); set_canvas(w*SS,h*SS)
+                img=fn(mode)
+                if SS!=1: img=img.resize((w,h),Image.LANCZOS)
+                img.save(os.path.join(d,f"bnbhubs-{scr}-{name}-{mode}.png"),"PNG",optimize=True)
+        print("done",scr,w,"x",h,"SSx",SS)
     print("DONE","FP",FINGERPRINT)
